@@ -47,7 +47,7 @@ func (d *Decoder) Decode() (*FBXF, error) {
 // if nil, data is not binary
 func (d *Decoder) readBinaryVersion() *int32 {
 	magic := d.readBinSeeker(binMagicSize)
-	if string(magic) != "Kaydara FBX Binary  \x00\x1a\x00" {
+	if string(magic) != binHeader {
 		d.p -= binMagicSize
 		return nil
 	}
