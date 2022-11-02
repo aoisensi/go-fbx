@@ -1,4 +1,4 @@
-package fbxf
+package fbx
 
 type Node struct {
 	Name       string

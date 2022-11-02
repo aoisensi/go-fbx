@@ -1,15 +1,25 @@
-package fbxf
+package fbx
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/binary"
 	"io"
+	"reflect"
+	"strings"
 )
 
-var footer1 = make([]byte, 16)
-var footer2 = make([]byte, 4)
-var footer3 = make([]byte, 120)
-var footer4 = []byte{0xf8, 0x5a, 0x8c, 0x6a, 0xde, 0xf5, 0xd9, 0x7e, 0xec, 0xe9, 0x0c, 0xe3, 0x75, 0x8f, 0x29, 0x0b}
+var (
+	footer1 = make([]byte, 16)
+	footer2 = make([]byte, 4)
+	footer3 = make([]byte, 120)
+	footer4 = []byte{0xfa, 0xbc, 0xab, 0x09, 0xd0, 0xc8, 0xd4, 0x66, 0xb1, 0x76, 0xfb, 0x83, 0x1c, 0xf7, 0x26, 0x7e}
+)
+
+var (
+	dataTrue  byte = 'Y'
+	dataFalse byte = 'T'
+)
 
 type BinaryEncoder struct {
 	big bool
@@ -21,7 +31,7 @@ func NewBinaryEncoder(w io.Writer) *BinaryEncoder {
 	return &BinaryEncoder{w: w}
 }
 
-func (e *BinaryEncoder) Encode(fbxf *FBXF) error {
+func (e *BinaryEncoder) Encode(fbxf *FBX) error {
 	e.buf = bytes.NewBuffer(make([]byte, 0, 1024*1024*16))
 	e.big = fbxf.Version >= 7500
 	if err := e.write(binHeader); err != nil {
@@ -116,17 +126,60 @@ func (e *BinaryEncoder) writeNode(node *Node) error {
 			return err
 		}
 		switch a := a.(type) {
-		case bool:
-			if err := e.writeBool(a); err != nil {
+		default:
+			if err := e.write(a); err != nil {
 				return err
 			}
-		case []bool:
-			for _, c := range a {
-				if err := e.writeBool(c); err != nil {
+		case []bool, []int32, []int64, []float32, []float64:
+			l := reflect.ValueOf(a).Len()
+			if err := e.write(uint32(l)); err != nil {
+				return err
+			}
+			data := new(bytes.Buffer)
+			if ab, ok := a.([]bool); ok {
+				for _, c := range ab {
+					if err := binary.Write(data, le, dataBool(c)); err != nil {
+						return err
+					}
+				}
+			} else {
+				if err := binary.Write(data, le, a); err != nil {
 					return err
 				}
 			}
-		default:
+			encode := uint32(0)
+			if data.Len() >= 128 {
+				cdata := new(bytes.Buffer)
+				cw := zlib.NewWriter(cdata)
+				if _, err := io.Copy(cw, data); err != nil {
+					cw.Close()
+					return err
+				}
+				cw.Close()
+				data = cdata
+				encode = 1
+			}
+			if err := e.write(encode); err != nil {
+				return err
+			}
+			if err := e.write(uint32(data.Len())); err != nil {
+				return err
+			}
+			if err := e.write(data.Bytes()); err != nil {
+				return err
+			}
+		case []byte:
+			if err := e.write(uint32(len(a))); err != nil {
+				return err
+			}
+			if err := e.write(a); err != nil {
+				return err
+			}
+		case string:
+			a = strings.ReplaceAll(a, "::", "\x00\x01")
+			if err := e.write(uint32(len([]byte(a)))); err != nil {
+				return err
+			}
 			if err := e.write(a); err != nil {
 				return err
 			}
@@ -165,14 +218,6 @@ func (e *BinaryEncoder) writeNodeHeader(header *binNodeHeader) error {
 	return e.write(header.NameSize)
 }
 
-func (e *BinaryEncoder) writeBool(c bool) error {
-	if c {
-		return e.write('Y')
-	} else {
-		return e.write('T')
-	}
-}
-
 func (e *BinaryEncoder) writeSizeAt(size uint64, pos int) {
 	buf := e.buf.Bytes()
 	i := 4
@@ -194,7 +239,26 @@ func (e *BinaryEncoder) writeSize(size uint64) error {
 	}
 }
 
+func dataBool(c bool) byte {
+	if c {
+		return dataTrue
+	} else {
+		return dataFalse
+	}
+}
+
 func (e *BinaryEncoder) write(data any) error {
+	if s, ok := data.(bool); ok {
+		return e.write(dataBool(s))
+	}
+	if s, ok := data.([]bool); ok {
+		for _, c := range s {
+			if err := e.write(c); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	if s, ok := data.(string); ok {
 		return binary.Write(e.buf, le, []byte(s))
 	}

@@ -1,4 +1,4 @@
-package fbxf
+package fbx
 
 import "encoding/binary"
 

@@ -1,4 +1,4 @@
-package fbxf
+package fbx
 
 import (
 	"io"
@@ -8,7 +8,7 @@ type Decoder struct {
 	r    io.Reader
 	body []byte
 	p    int
-	fbxf *FBXF
+	fbxf *FBX
 	big  bool
 }
 
@@ -16,14 +16,14 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{r: r}
 }
 
-func (d *Decoder) Decode() (*FBXF, error) {
+func (d *Decoder) Decode() (*FBX, error) {
 	var err error
 	d.body, err = io.ReadAll(d.r)
 	if err != nil {
 		return nil, err
 	}
 
-	d.fbxf = new(FBXF)
+	d.fbxf = new(FBX)
 
 	binVersion := d.readBinaryVersion()
 	if binVersion == nil {

@@ -1,4 +1,4 @@
-package fbxf
+package fbx
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
+	"strings"
 )
 
 func (d *Decoder) readBinNode() *Node {
@@ -18,7 +19,6 @@ func (d *Decoder) readBinNode() *Node {
 
 func (d *Decoder) readBinNodeBody(header *binNodeHeader) *Node {
 	node := new(Node)
-
 	// Name
 	node.Name = string(d.body[d.p : d.p+int(header.NameSize)])
 	d.p += int(header.NameSize)
@@ -94,7 +94,7 @@ func (d *Decoder) readBinAttribute() any {
 		data := make([]byte, size)
 		copy(data, d.readBinSeeker(int(size)))
 		if code == 'S' {
-			return string(data)
+			return strings.ReplaceAll(string(data), "\x00\x01", "::")
 		}
 		return data
 	}
