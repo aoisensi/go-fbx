@@ -90,98 +90,100 @@ func (e *BinaryEncoder) writeNode(node *Node) error {
 		return err
 	}
 	attrsStartPos := e.buf.Len()
-	for _, a := range node.Attributes {
-		var code byte
-		switch a.(type) {
-		case bool:
-			code = 'C'
-		case int16:
-			code = 'Y'
-		case int32:
-			code = 'I'
-		case int64:
-			code = 'L'
-		case float32:
-			code = 'F'
-		case float64:
-			code = 'D'
-		case []bool:
-			code = 'b'
-		case []int32:
-			code = 'i'
-		case []int64:
-			code = 'l'
-		case []float32:
-			code = 'f'
-		case []float64:
-			code = 'd'
-		case []byte:
-			code = 'R'
-		case string:
-			code = 'S'
-		default:
-			panic("invalied attribute type detected.")
-		}
-		if err := e.write(code); err != nil {
-			return err
-		}
-		switch a := a.(type) {
-		default:
-			if err := e.write(a); err != nil {
+	if node.Attributes != nil {
+		for _, a := range node.Attributes {
+			var code byte
+			switch a.(type) {
+			case bool:
+				code = 'C'
+			case int16:
+				code = 'Y'
+			case int32:
+				code = 'I'
+			case int64:
+				code = 'L'
+			case float32:
+				code = 'F'
+			case float64:
+				code = 'D'
+			case []bool:
+				code = 'b'
+			case []int32:
+				code = 'i'
+			case []int64:
+				code = 'l'
+			case []float32:
+				code = 'f'
+			case []float64:
+				code = 'd'
+			case []byte:
+				code = 'R'
+			case string:
+				code = 'S'
+			default:
+				panic("invalied attribute type detected.")
+			}
+			if err := e.write(code); err != nil {
 				return err
 			}
-		case []bool, []int32, []int64, []float32, []float64:
-			l := reflect.ValueOf(a).Len()
-			if err := e.write(uint32(l)); err != nil {
-				return err
-			}
-			data := new(bytes.Buffer)
-			if ab, ok := a.([]bool); ok {
-				for _, c := range ab {
-					if err := binary.Write(data, le, dataBool(c)); err != nil {
+			switch a := a.(type) {
+			default:
+				if err := e.write(a); err != nil {
+					return err
+				}
+			case []bool, []int32, []int64, []float32, []float64:
+				l := reflect.ValueOf(a).Len()
+				if err := e.write(uint32(l)); err != nil {
+					return err
+				}
+				data := new(bytes.Buffer)
+				if ab, ok := a.([]bool); ok {
+					for _, c := range ab {
+						if err := binary.Write(data, le, dataBool(c)); err != nil {
+							return err
+						}
+					}
+				} else {
+					if err := binary.Write(data, le, a); err != nil {
 						return err
 					}
 				}
-			} else {
-				if err := binary.Write(data, le, a); err != nil {
-					return err
-				}
-			}
-			encode := uint32(0)
-			if data.Len() >= 128 {
-				cdata := new(bytes.Buffer)
-				cw := zlib.NewWriter(cdata)
-				if _, err := io.Copy(cw, data); err != nil {
+				encode := uint32(0)
+				if data.Len() >= 128 {
+					cdata := new(bytes.Buffer)
+					cw := zlib.NewWriter(cdata)
+					if _, err := io.Copy(cw, data); err != nil {
+						cw.Close()
+						return err
+					}
 					cw.Close()
+					data = cdata
+					encode = 1
+				}
+				if err := e.write(encode); err != nil {
 					return err
 				}
-				cw.Close()
-				data = cdata
-				encode = 1
-			}
-			if err := e.write(encode); err != nil {
-				return err
-			}
-			if err := e.write(uint32(data.Len())); err != nil {
-				return err
-			}
-			if err := e.write(data.Bytes()); err != nil {
-				return err
-			}
-		case []byte:
-			if err := e.write(uint32(len(a))); err != nil {
-				return err
-			}
-			if err := e.write(a); err != nil {
-				return err
-			}
-		case string:
-			a = strings.ReplaceAll(a, "::", "\x00\x01")
-			if err := e.write(uint32(len([]byte(a)))); err != nil {
-				return err
-			}
-			if err := e.write(a); err != nil {
-				return err
+				if err := e.write(uint32(data.Len())); err != nil {
+					return err
+				}
+				if err := e.write(data.Bytes()); err != nil {
+					return err
+				}
+			case []byte:
+				if err := e.write(uint32(len(a))); err != nil {
+					return err
+				}
+				if err := e.write(a); err != nil {
+					return err
+				}
+			case string:
+				a = strings.ReplaceAll(a, "::", "\x00\x01")
+				if err := e.write(uint32(len([]byte(a)))); err != nil {
+					return err
+				}
+				if err := e.write(a); err != nil {
+					return err
+				}
 			}
 		}
 	}
