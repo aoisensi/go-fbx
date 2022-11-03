@@ -11,6 +11,7 @@ var creationTime = "1970-01-01 10:00:00:000"
 
 type FBX struct {
 	Documents   *Documents
+	Definitions *Definitions
 	Objects     *Objects
 	Connections *Connections
 }
@@ -18,7 +19,8 @@ type FBX struct {
 func NewFBX() *FBX {
 	return &FBX{
 		Documents:   NewDocuments(),
-		Objects:     &Objects{},
+		Definitions: &Definitions{},
+		Objects:     NewObjects(),
 		Connections: &Connections{},
 	}
 }
@@ -34,6 +36,9 @@ func (f *FBX) WriteTo(w io.Writer) (int64, error) {
 	)
 	if f.Documents != nil {
 		fbxr.Nodes = append(fbxr.Nodes, f.Documents.Node())
+	}
+	if f.Definitions != nil {
+		fbxr.Nodes = append(fbxr.Nodes, f.Definitions.Node())
 	}
 	fbxr.Nodes = append(fbxr.Nodes, &fbx.Node{Name: "References"})
 	fbxr.Nodes = append(fbxr.Nodes, &fbx.Node{

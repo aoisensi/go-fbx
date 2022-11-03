@@ -6,6 +6,10 @@ type Objects struct {
 	Objects []Object
 }
 
+func NewObjects() *Objects {
+	return &Objects{Objects: make([]Object, 0, 16)}
+}
+
 func (s *Objects) Node() *fbx.Node {
 	if s.Objects == nil {
 		return &fbx.Node{Name: "Objects"}
@@ -36,6 +40,10 @@ func (s *ObjectGeometry) ObjectNode() *fbx.Node {
 		Name:       "Geometry",
 		Attributes: []any{s.ID, s.Name + "::Geometry", "Mesh"},
 		Children: []*fbx.Node{
+			{
+				Name:       "GeometryVersion",
+				Attributes: []any{int32(124)},
+			},
 			{
 				Name:       "Vertices",
 				Attributes: []any{s.Vertices},
