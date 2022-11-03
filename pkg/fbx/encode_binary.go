@@ -31,44 +31,43 @@ func NewBinaryEncoder(w io.Writer) *BinaryEncoder {
 	return &BinaryEncoder{w: w}
 }
 
-func (e *BinaryEncoder) Encode(fbxf *FBX) error {
+func (e *BinaryEncoder) Encode(fbxf *FBX) (int64, error) {
 	e.buf = bytes.NewBuffer(make([]byte, 0, 1024*1024*16))
 	e.big = fbxf.Version >= 7500
 	if err := e.write(binHeader); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(int32(fbxf.Version)); err != nil {
-		return err
+		return 0, err
 	}
 	for _, node := range fbxf.Nodes {
 		if err := e.writeNode(node); err != nil {
-			return err
+			return 0, err
 		}
 	}
 	if err := e.writeNodeHeader(nil); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(footer1); err != nil {
-		return err
+		return 0, err
 	}
 	// padding
 	if err := e.write(make([]byte, 16-e.buf.Len()%16)); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(footer2); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(int32(fbxf.Version)); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(footer3); err != nil {
-		return err
+		return 0, err
 	}
 	if err := e.write(footer4); err != nil {
-		return err
+		return 0, err
 	}
-	_, err := e.buf.WriteTo(e.w)
-	return err
+	return e.buf.WriteTo(e.w)
 }
 
 func (e *BinaryEncoder) writeNode(node *Node) error {
