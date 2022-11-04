@@ -9,7 +9,7 @@ func (s *Definitions) Node() *fbx.Node {
 	return &fbx.Node{
 		Name: "Definitions",
 		Children: []*fbx.Node{
-			Count(2),
+			Count(3),
 			{
 				Name:       "ObjectType",
 				Attributes: []any{"Model"},
@@ -17,6 +17,10 @@ func (s *Definitions) Node() *fbx.Node {
 			{
 				Name:       "ObjectType",
 				Attributes: []any{"Geometry"},
+			},
+			{
+				Name:       "ObjectType",
+				Attributes: []any{"Material"},
 			},
 		},
 	}

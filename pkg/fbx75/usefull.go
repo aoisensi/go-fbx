@@ -15,3 +15,10 @@ func Version(v int) *fbx.Node {
 		Attributes: []any{int32(v)},
 	}
 }
+
+func Name(name string) *fbx.Node {
+	return &fbx.Node{
+		Name:       "Name",
+		Attributes: []any{name},
+	}
+}

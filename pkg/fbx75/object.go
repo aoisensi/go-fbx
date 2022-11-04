@@ -28,15 +28,19 @@ type Object interface {
 	ObjectNode() *fbx.Node
 }
 
-type ObjectGeometry struct {
-	ID                 int64
-	Name               string
-	Vertices           []float64
-	PolygonVertexIndex []int32
+type Geometry struct {
+	ID                    int64
+	Name                  string
+	Vertices              []float64
+	PolygonVertexIndex    []int32
+	LayerElementUV        *LayerElementUV
+	LayerElementSmoothing *LayerElementSmoothing
+	LayerElementMaterial  *LayerElementMaterial
+	Layer                 *Layer
 }
 
-func (s *ObjectGeometry) ObjectNode() *fbx.Node {
-	return &fbx.Node{
+func (s *Geometry) ObjectNode() *fbx.Node {
+	node := &fbx.Node{
 		Name:       "Geometry",
 		Attributes: []any{s.ID, s.Name + "::Geometry", "Mesh"},
 		Children: []*fbx.Node{
@@ -54,17 +58,59 @@ func (s *ObjectGeometry) ObjectNode() *fbx.Node {
 			},
 		},
 	}
+	if s.LayerElementUV != nil {
+		node.AddChild(s.LayerElementUV.Node())
+	}
+	if s.LayerElementSmoothing != nil {
+		node.AddChild(s.LayerElementSmoothing.Node())
+	}
+	if s.LayerElementMaterial != nil {
+		node.AddChild(s.LayerElementMaterial.Node())
+	}
+	if s.Layer != nil {
+		node.AddChild(s.Layer.Node())
+	}
+	return node
 }
 
-type ObjectModel struct {
+type Model struct {
 	ID   int64
 	Name string
 }
 
-func (s *ObjectModel) ObjectNode() *fbx.Node {
+func (s *Model) ObjectNode() *fbx.Node {
 	return &fbx.Node{
 		Name:       "Model",
 		Attributes: []any{s.ID, s.Name + "::Model", "Mesh"},
-		Children:   []*fbx.Node{Version(232)},
+		Children: []*fbx.Node{
+			Version(232),
+			{
+				Name:       "Shading",
+				Attributes: []any{true},
+			},
+		},
+	}
+}
+
+type Material struct {
+	ID   int64
+	Name string
+}
+
+func (s *Material) ObjectNode() *fbx.Node {
+	return &fbx.Node{
+		Name:       "Material",
+		Attributes: []any{s.ID, s.Name + "::Material", ""},
+		Children: []*fbx.Node{
+			Version(102),
+			{
+				Name:       "ShadingModel",
+				Attributes: []any{"Phong"},
+			},
+			{
+				Name:       "MultiLayer",
+				Attributes: []any{int32(0)},
+			},
+		},
 	}
 }
