@@ -114,3 +114,15 @@ func (s *Material) ObjectNode() *fbx.Node {
 		},
 	}
 }
+
+type NodeAttribute struct {
+	ID   int64
+	Name string
+}
+
+func (s *NodeAttribute) ObjectNode() *fbx.Node {
+	return &fbx.Node{
+		Name:       "NodeAttribute",
+		Attributes: []any{s.ID, s.Name + "::NodeAttribute", "NodeAttribute"},
+	}
+}
