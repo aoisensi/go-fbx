@@ -26,6 +26,12 @@ func (c *Connections) Node() *fbx.Node {
 type C [2]int64
 
 func (fbx *FBX) Connect(o1, o2 Object) {
-	c := C{o1.Base().ID, o2.Base().ID}
+	c := C{}
+	if o1 != nil {
+		c[0] = o1.Base().ID
+	}
+	if o2 != nil {
+		c[1] = o2.Base().ID
+	}
 	fbx.Connections.Cs = append(fbx.Connections.Cs, c)
 }

@@ -144,3 +144,7 @@ func (s *NodeAttribute) ObjectNode() *fbx.Node {
 func (s *NodeAttribute) Base() ObjectBase {
 	return s.ObjectBase
 }
+
+func (fbx *FBX) AddObjects(os ...Object) {
+	fbx.Objects.Objects = append(fbx.Objects.Objects, os...)
+}
