@@ -24,13 +24,18 @@ func (s *Objects) Node() *fbx.Node {
 	return node
 }
 
+type ObjectBase struct {
+	ID   int64
+	Name string
+}
+
 type Object interface {
 	ObjectNode() *fbx.Node
+	Base() ObjectBase
 }
 
 type Geometry struct {
-	ID                    int64
-	Name                  string
+	ObjectBase
 	Vertices              []float64
 	PolygonVertexIndex    []int32
 	LayerElementUV        *LayerElementUV
@@ -73,9 +78,12 @@ func (s *Geometry) ObjectNode() *fbx.Node {
 	return node
 }
 
+func (s *Geometry) Base() ObjectBase {
+	return s.ObjectBase
+}
+
 type Model struct {
-	ID   int64
-	Name string
+	ObjectBase
 }
 
 func (s *Model) ObjectNode() *fbx.Node {
@@ -92,9 +100,12 @@ func (s *Model) ObjectNode() *fbx.Node {
 	}
 }
 
+func (s *Model) Base() ObjectBase {
+	return s.ObjectBase
+}
+
 type Material struct {
-	ID   int64
-	Name string
+	ObjectBase
 }
 
 func (s *Material) ObjectNode() *fbx.Node {
@@ -115,9 +126,12 @@ func (s *Material) ObjectNode() *fbx.Node {
 	}
 }
 
+func (s *Material) Base() ObjectBase {
+	return s.ObjectBase
+}
+
 type NodeAttribute struct {
-	ID   int64
-	Name string
+	ObjectBase
 }
 
 func (s *NodeAttribute) ObjectNode() *fbx.Node {
@@ -125,4 +139,8 @@ func (s *NodeAttribute) ObjectNode() *fbx.Node {
 		Name:       "NodeAttribute",
 		Attributes: []any{s.ID, s.Name + "::NodeAttribute", "NodeAttribute"},
 	}
+}
+
+func (s *NodeAttribute) Base() ObjectBase {
+	return s.ObjectBase
 }
