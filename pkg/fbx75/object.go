@@ -1,6 +1,13 @@
 package fbx75
 
-import "github.com/aoisensi/go-fbx/pkg/fbx"
+import (
+	"math/rand"
+	"time"
+
+	"github.com/aoisensi/go-fbx/pkg/fbx"
+)
+
+var ObjectIDMaker = rand.NewSource(time.Now().UnixMicro())
 
 type Objects struct {
 	Objects []Object
@@ -27,6 +34,13 @@ func (s *Objects) Node() *fbx.Node {
 type ObjectBase struct {
 	ID   int64
 	Name string
+}
+
+func NewObjectBase(name string) ObjectBase {
+	return ObjectBase{
+		ID:   ObjectIDMaker.Int63(),
+		Name: name,
+	}
 }
 
 type Object interface {
